@@ -20,6 +20,7 @@ export default function EditMissionPage() {
   const [target, setTarget] = useState(1);
   const [unit, setUnit] = useState("sessions");
   const [xp, setXp] = useState(20);
+  const [completionBonus, setCompletionBonus] = useState(0);
   const [requiredForStreak, setRequiredForStreak] = useState(true);
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function EditMissionPage() {
     setTarget(data.target);
     setUnit(data.unit);
     setXp(data.xp);
+    setCompletionBonus(data.completion_bonus);
     setRequiredForStreak(data.required_for_streak);
 
     setLoading(false);
@@ -137,6 +139,27 @@ export default function EditMissionPage() {
             onChange={(e) => setTarget(Number(e.target.value))}
             className="w-full rounded-xl bg-zinc-900 p-4"
           />
+          <input
+  type="number"
+  value={xp}
+  onChange={(e) => setXp(Number(e.target.value))}
+  className="w-full rounded-xl bg-zinc-900 p-4"
+/>
+
+<div>
+  <label className="mb-2 block text-sm text-zinc-400">
+    Completion Bonus XP
+  </label>
+
+  <input
+    type="number"
+    value={completionBonus}
+    onChange={(e) => setCompletionBonus(Number(e.target.value))}
+    className="w-full rounded-xl bg-zinc-900 p-4"
+  />
+</div>
+
+<label className="flex items-center justify-between rounded-xl bg-zinc-900 p-4"></label>
 
           <input
             value={unit}

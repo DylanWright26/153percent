@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function NewMissionPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function NewMissionPage() {
   const [target, setTarget] = useState(1);
   const [unit, setUnit] = useState("sessions");
   const [xp, setXp] = useState(20);
+  const [completionBonus, setCompletionBonus] = useState(0);
   const [requiredForStreak, setRequiredForStreak] = useState(true);
 
   const [loading, setLoading] = useState(false);
@@ -64,6 +66,7 @@ export default function NewMissionPage() {
         progress: 0,
         unit,
         xp,
+        completion_bonus: completionBonus,
         required_for_streak: requiredForStreak,
         active: true,
       })
@@ -190,6 +193,18 @@ export default function NewMissionPage() {
               className="w-full rounded-xl bg-zinc-900 p-4"
             />
           </div>
+          <div>
+  <label className="mb-2 block text-sm text-zinc-400">
+    Completion Bonus XP
+  </label>
+
+  <input
+    type="number"
+    value={completionBonus}
+    onChange={(e) => setCompletionBonus(Number(e.target.value))}
+    className="w-full rounded-xl bg-zinc-900 p-4"
+  />
+</div>
 
           <label className="flex items-center justify-between rounded-xl bg-zinc-900 p-4">
             <span>Counts towards streak</span>

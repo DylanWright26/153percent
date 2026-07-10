@@ -19,6 +19,7 @@ export interface Mission {
   progress: number;
   unit: string;
   xp: number;
+  completion_bonus: number;
   required_for_streak: boolean;
   active: boolean;
 }
@@ -102,7 +103,7 @@ export function AppProvider({
 
     setProfile(data);
   }
-async function updateMissionProgress(
+  async function updateMissionProgress(
   mission: Mission,
   change: number
 ) {
@@ -118,6 +119,25 @@ async function updateMissionProgress(
       mission.progress + change
     )
   );
+const wasComplete = mission.progress >= mission.target;
+const isComplete = newProgress >= mission.target;
+
+let totalXpChange = xpChange;
+
+if (!wasComplete && isComplete) {
+  totalXpChange += mission.completion_bonus;
+}
+
+if (wasComplete && !isComplete) {
+  totalXpChange -= mission.completion_bonus;
+}
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return;
+  }
 
   if (newProgress === mission.progress) {
     return;
@@ -133,6 +153,17 @@ async function updateMissionProgress(
   if (error) {
     alert(error.message);
     console.error(error);
+    return;
+  }
+
+  const { error: xpError } = await supabase.rpc("add_xp", {
+    p_user_id: user.id,
+    p_amount: Math.round(totalXpChange),
+  });
+
+  if (xpError) {
+    alert(xpError.message);
+    console.error(xpError);
     return;
   }
 

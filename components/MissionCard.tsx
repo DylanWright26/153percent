@@ -11,6 +11,7 @@ export interface Mission {
   progress: number;
   unit: string;
   xp: number;
+  completion_bonus: number;
   required_for_streak: boolean;
   active: boolean;
 }
