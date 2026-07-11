@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useApp } from "@/context/AppContext";
 
 export default function NewMissionPage() {
   const router = useRouter();
+  const { refreshMissions, refreshProfile } = useApp();
 
   const [userId, setUserId] = useState("");
 
@@ -77,12 +79,17 @@ export default function NewMissionPage() {
 
     setLoading(false);
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    setLoading(false);
 
-    router.push("/profile/missions");
+if (error) {
+  alert(error.message);
+  return;
+}
+
+await refreshMissions();
+await refreshProfile();
+
+router.push("/");
   }
 
   return (

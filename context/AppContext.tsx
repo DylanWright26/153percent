@@ -189,22 +189,43 @@ if (wasComplete && !isComplete) {
     }
 
     await refreshMissions();
-  }
+await refreshProfile();
+}
 
   async function loadData() {
-    setLoading(true);
+  setLoading(true);
 
-    await Promise.all([
-      refreshMissions(),
-      refreshProfile(),
-    ]);
+  await supabase.rpc("reset_missions");
 
-    setLoading(false);
-  }
+  await Promise.all([
+    refreshMissions(),
+    refreshProfile(),
+  ]);
+
+  setLoading(false);
+}
 
   useEffect(() => {
-    loadData();
-  }, []);
+  loadData();
+
+  async function handleFocus() {
+    await loadData();
+  }
+
+  function handleVisibility() {
+    if (document.visibilityState === "visible") {
+      handleFocus();
+    }
+  }
+
+  window.addEventListener("focus", handleFocus);
+  document.addEventListener("visibilitychange", handleVisibility);
+
+  return () => {
+    window.removeEventListener("focus", handleFocus);
+    document.removeEventListener("visibilitychange", handleVisibility);
+  };
+}, []);
 
   return (
     <AppContext.Provider

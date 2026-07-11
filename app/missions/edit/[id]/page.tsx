@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useApp } from "@/context/AppContext";
 
 export default function EditMissionPage() {
   const router = useRouter();
+  const { refreshMissions, refreshProfile } = useApp();
   const params = useParams();
 
   const id = params.id as string;
@@ -64,6 +66,7 @@ export default function EditMissionPage() {
         target,
         unit,
         xp,
+        completion_bonus: completionBonus,
         required_for_streak: requiredForStreak,
       })
       .eq("id", id);
@@ -75,7 +78,10 @@ export default function EditMissionPage() {
       return;
     }
 
-   router.push("/profile/missions");
+   await refreshMissions();
+await refreshProfile();
+
+router.push("/");
   }
 
   if (loading) {
@@ -139,12 +145,6 @@ export default function EditMissionPage() {
             onChange={(e) => setTarget(Number(e.target.value))}
             className="w-full rounded-xl bg-zinc-900 p-4"
           />
-          <input
-  type="number"
-  value={xp}
-  onChange={(e) => setXp(Number(e.target.value))}
-  className="w-full rounded-xl bg-zinc-900 p-4"
-/>
 
 <div>
   <label className="mb-2 block text-sm text-zinc-400">
@@ -158,8 +158,6 @@ export default function EditMissionPage() {
     className="w-full rounded-xl bg-zinc-900 p-4"
   />
 </div>
-
-<label className="flex items-center justify-between rounded-xl bg-zinc-900 p-4"></label>
 
           <input
             value={unit}
