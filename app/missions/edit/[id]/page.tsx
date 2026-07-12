@@ -38,7 +38,7 @@ export default function EditMissionPage() {
 
     if (error) {
       alert(error.message);
-      router.push("/profile/missions");
+      router.push("/account/missions");
       return;
     }
 
