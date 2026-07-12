@@ -57,28 +57,51 @@ export function AppProvider({
   const [loading, setLoading] = useState(true);
 
   async function refreshMissions() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!user) {
-      setMissions([]);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("missions")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setMissions(data ?? []);
+  if (!user) {
+    setMissions([]);
+    return;
   }
+
+  const { data, error } = await supabase
+    .from("missions")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  const sortedMissions = [...(data ?? [])].sort((a, b) => {
+    // 1. Streak missions first
+    if (a.required_for_streak !== b.required_for_streak) {
+      return a.required_for_streak ? -1 : 1;
+    }
+
+    // 2. Highest completion %
+    const aProgress = a.target > 0 ? a.progress / a.target : 0;
+    const bProgress = b.target > 0 ? b.progress / b.target : 0;
+
+    if (aProgress !== bProgress) {
+      return bProgress - aProgress;
+    }
+
+    // 3. Highest XP
+    if (a.xp !== b.xp) {
+      return b.xp - a.xp;
+    }
+
+    // 4. Oldest first
+    return 0;
+  });
+
+  setMissions(sortedMissions);
+}
 
   async function refreshProfile() {
     const {
@@ -167,8 +190,20 @@ if (wasComplete && !isComplete) {
     return;
   }
 
-  await refreshMissions();
-  await refreshProfile();
+if (change > 0 && mission.required_for_streak) {
+  const { error: streakError } = await supabase.rpc("update_streak", {
+    p_user_id: user.id,
+  });
+
+  if (streakError) {
+    alert(streakError.message);
+    console.error(streakError);
+    return;
+  }
+}
+
+await refreshMissions();
+await refreshProfile();
 }
   async function deleteMission(id: string) {
     const confirmed = window.confirm(
