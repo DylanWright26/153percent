@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import {
   getLevel,
@@ -89,19 +89,23 @@ const longestStreak = profile?.longest_streak ?? 0;
         </div>
 
         {/* Achievements */}
-        <div className="mt-5 rounded-3xl bg-zinc-900 p-6">
+        <Link
+        href="/achievements"
+        className="mt-5 block rounded-3xl bg-zinc-900 p-6 transition hover:bg-zinc-800"
+        >
           <p className="text-sm uppercase tracking-wider text-zinc-500">
             🏆 Achievements
-          </p>
+            </p>
 
-          <p className="mt-3 text-3xl font-bold">
-            Coming Soon
-          </p>
+  <p className="mt-3 text-3xl font-bold">
+    View Achievements
+  </p>
 
-          <p className="mt-2 text-zinc-400">
-            Unlock achievements as you progress.
-          </p>
-        </div>
+  <p className="mt-2 text-zinc-400">
+    Unlock achievements as you progress.
+  </p>
+</Link>
+
 
         {/* Rewards */}
         <div className="mt-5 rounded-3xl bg-zinc-900 p-6">

@@ -9,10 +9,12 @@ import {
 } from "react";
 
 import { supabase } from "@/lib/supabase";
+import { checkAchievements } from "@/utils/achievements";
 
 export interface Mission {
   id: string;
   name: string;
+  description: string | null;
   category: string;
   frequency: string;
   target: number;
@@ -162,7 +164,7 @@ if (wasComplete && !isComplete) {
     return;
   }
 
-  if (newProgress === mission.progress) {
+  if  (newProgress === mission.progress) {
     return;
   }
 
@@ -185,12 +187,28 @@ if (wasComplete && !isComplete) {
   });
 
   if (xpError) {
-    alert(xpError.message);
-    console.error(xpError);
+  alert(xpError.message);
+  console.error(xpError);
+  return;
+}
+
+// Increase lifetime mission count
+if (!wasComplete && isComplete) {
+  const { error: missionCountError } = await supabase.rpc(
+    "increment_missions_completed",
+    {
+      p_user_id: user.id,
+    }
+  );
+
+  if (missionCountError) {
+    alert(missionCountError.message);
+    console.error(missionCountError);
     return;
   }
+}
 
-if (change > 0 && mission.required_for_streak) {
+if (change > 0 && mission.required_for_streak) { 
   const { error: streakError } = await supabase.rpc("update_streak", {
     p_user_id: user.id,
   });
@@ -201,6 +219,8 @@ if (change > 0 && mission.required_for_streak) {
     return;
   }
 }
+
+await checkAchievements(user.id);
 
 await refreshMissions();
 await refreshProfile();
@@ -230,14 +250,18 @@ await refreshProfile();
   async function loadData() {
   setLoading(true);
 
-  await supabase.rpc("reset_missions");
+  try {
+    await supabase.rpc("reset_missions");
 
-  await Promise.all([
-    refreshMissions(),
-    refreshProfile(),
-  ]);
-
-  setLoading(false);
+    await Promise.all([
+      refreshMissions(),
+      refreshProfile(),
+    ]);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
 }
 
   useEffect(() => {

@@ -1,29 +1,50 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
-import { useApp } from "@/context/AppContext";
+import { useApp, Mission } from "@/context/AppContext";
+import MissionModal from "@/components/missions/MissionModal";
 
 export default function MissionsPage() {
   const {
     missions,
     loading,
     deleteMission,
+    refreshMissions,
+    refreshProfile,
   } = useApp();
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
+
+
+  function openCreateModal() {
+    setSelectedMission(null);
+    setShowModal(true);
+  }
+
+
+  function openEditModal(mission: Mission) {
+    setSelectedMission(mission);
+    setShowModal(true);
+  }
+
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-        <p className="text-zinc-400 text-lg">
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
+        <p className="text-lg text-zinc-400">
           Loading missions...
         </p>
       </main>
     );
   }
 
+
   return (
-    <main className="min-h-screen bg-zinc-950 text-white pb-24">
+    <main className="min-h-screen bg-zinc-950 pb-24 text-white">
+
       <div className="mx-auto max-w-md px-6 py-8">
 
         <h1 className="text-4xl font-bold">
@@ -34,15 +55,18 @@ export default function MissionsPage() {
           Manage your missions.
         </p>
 
-        <Link
-          href="/missions/new"
+
+        <button
+          onClick={openCreateModal}
           className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 p-4 font-semibold text-black transition hover:bg-emerald-400"
         >
           <Plus size={20} />
           Add Mission
-        </Link>
+        </button>
+
 
         <div className="mt-6 space-y-4">
+
 
           {missions.length === 0 && (
             <div className="rounded-2xl bg-zinc-900 p-8 text-center">
@@ -58,11 +82,15 @@ export default function MissionsPage() {
             </div>
           )}
 
+
+
           {missions.map((mission) => (
+
             <div
               key={mission.id}
               className="rounded-2xl bg-zinc-900 p-5"
             >
+
               <div className="flex items-start justify-between">
 
                 <div>
@@ -71,19 +99,31 @@ export default function MissionsPage() {
                     {mission.name}
                   </h2>
 
-                  <p className="mt-1 text-sm text-zinc-500">
+
+                  {mission.description && (
+                    <p className="mt-2 text-sm text-zinc-400">
+                      {mission.description}
+                    </p>
+                  )}
+
+
+                  <p className="mt-2 text-sm text-zinc-500">
                     {mission.category}
                   </p>
 
                 </div>
 
+
                 <span className="rounded-full bg-emerald-500 px-3 py-1 text-sm font-bold text-black">
                   +{mission.xp} XP
                 </span>
 
+
               </div>
 
-              <div className="mt-4">
+
+
+              <div className="mt-5">
 
                 <div className="mb-2 flex justify-between text-sm text-zinc-400">
 
@@ -91,11 +131,14 @@ export default function MissionsPage() {
                     {mission.frequency}
                   </span>
 
+
                   <span>
                     {mission.progress} / {mission.target} {mission.unit}
                   </span>
 
                 </div>
+
+
 
                 <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
 
@@ -111,24 +154,32 @@ export default function MissionsPage() {
 
                 </div>
 
+
               </div>
+
+
 
               <div className="mt-5 flex items-center justify-between">
 
+
                 <span className="text-sm text-zinc-400">
                   {mission.required_for_streak
-                    ? "🔥 Counts towards streak"
-                    : "⭐ Bonus mission"}
+                    ? "🔥 Maintain Daily Streak"
+                    : "⭐ Optional Mission"}
                 </span>
+
 
                 <div className="flex gap-3">
 
-                  <Link
-                    href={`/missions/edit/${mission.id}`}
+
+                  <button
+                    onClick={() => openEditModal(mission)}
                     className="rounded-xl bg-zinc-800 p-2 transition hover:bg-zinc-700"
                   >
                     <Pencil size={18} />
-                  </Link>
+                  </button>
+
+
 
                   <button
                     onClick={() => deleteMission(mission.id)}
@@ -137,16 +188,40 @@ export default function MissionsPage() {
                     <Trash2 size={18} />
                   </button>
 
+
                 </div>
+
 
               </div>
 
+
             </div>
+
           ))}
+
 
         </div>
 
+
       </div>
+
+
+
+      {showModal && (
+
+        <MissionModal
+          mission={selectedMission ?? undefined}
+          onClose={() => setShowModal(false)}
+          onSaved={async () => {
+            await refreshMissions();
+            await refreshProfile();
+            setShowModal(false);
+          }}
+        />
+
+      )}
+
+
     </main>
   );
 }

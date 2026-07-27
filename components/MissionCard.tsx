@@ -5,6 +5,7 @@ import { Minus, Plus } from "lucide-react";
 export interface Mission {
   id: string;
   name: string;
+  description: string | null;
   category: string;
   frequency: string;
   target: number;
@@ -35,15 +36,19 @@ export default function MissionCard({
 
   return (
     <div className="w-full rounded-2xl bg-zinc-900 p-5">
-
       <div className="flex items-center justify-between">
-
         <div>
           <h3 className="text-lg font-bold">
             {mission.name}
           </h3>
 
-          <p className="text-sm text-zinc-400">
+          {mission.description && (
+            <p className="mt-1 text-sm text-zinc-400">
+              {mission.description}
+            </p>
+          )}
+
+          <p className="mt-2 text-sm text-zinc-500">
             {mission.category}
           </p>
         </div>
@@ -51,13 +56,10 @@ export default function MissionCard({
         <div className="rounded-xl bg-emerald-500 px-3 py-1 font-bold text-black">
           {mission.xp} XP
         </div>
-
       </div>
 
       <div className="mt-4">
-
         <div className="mb-3 flex items-center justify-between">
-
           <button
             onClick={() => onUpdate(mission, -1)}
             disabled={mission.progress === 0}
@@ -67,15 +69,13 @@ export default function MissionCard({
           </button>
 
           <div className="text-center">
-
-            <p className="capitalize text-sm text-zinc-400">
+            <p className="text-sm capitalize text-zinc-400">
               {mission.frequency}
             </p>
 
             <p className="font-semibold">
               {mission.progress} / {mission.target} {mission.unit}
             </p>
-
           </div>
 
           <button
@@ -85,22 +85,17 @@ export default function MissionCard({
           >
             <Plus size={18} />
           </button>
-
         </div>
 
         <div className="h-2 rounded-full bg-zinc-800">
-
           <div
             className="h-2 rounded-full bg-emerald-500 transition-all duration-300"
             style={{
               width: `${percent}%`,
             }}
           />
-
         </div>
-
       </div>
-
     </div>
   );
 }
