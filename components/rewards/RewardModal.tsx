@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 
@@ -16,12 +16,12 @@ const categories = [
 
 
 const unlockTypes = [
-  "XP",
   "Level",
   "Streak",
-  "Missions Completed",
-  "Milestones Completed",
-  "Personal Bests",
+  "Mission",
+  "Milestone",
+  "Achievement",
+  "Personal Best",
 ];
 
 
@@ -43,57 +43,178 @@ export default function RewardModal({
 
   const [category, setCategory] = useState("Lifestyle");
 
-  const [unlockType, setUnlockType] = useState("XP");
+  const [unlockType, setUnlockType] = useState("Level");
 
-  const [unlockValue, setUnlockValue] = useState(1000);
+  const [unlockId, setUnlockId] = useState("");
+
+  const [unlockValue, setUnlockValue] = useState(1);
+
+  const [options, setOptions] = useState<any[]>([]);
+
+  const [loadingOptions, setLoadingOptions] = useState(false);
 
 
 
-async function saveReward() {
+  async function loadUnlockOptions(type: string) {
 
-  if (!name.trim()) {
-    return;
+    setOptions([]);
+
+    setUnlockId("");
+
+    setLoadingOptions(true);
+
+
+    if (type === "Mission") {
+
+      const { data } = await supabase
+        .from("missions")
+        .select("id, name");
+
+      setOptions(data ?? []);
+
+    }
+
+
+    if (type === "Milestone") {
+
+      const { data } = await supabase
+        .from("milestones")
+        .select("id, title");
+
+      setOptions(data ?? []);
+
+    }
+
+
+    if (type === "Achievement") {
+
+      const { data } = await supabase
+        .from("achievements")
+        .select("id, name");
+
+      setOptions(data ?? []);
+
+    }
+
+
+    if (type === "Personal Best") {
+
+      const { data } = await supabase
+        .from("personal_bests")
+        .select("id, name");
+
+      setOptions(data ?? []);
+
+    }
+
+
+    setLoadingOptions(false);
+
   }
 
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
 
-  if (!user) {
-    return;
+
+  useEffect(() => {
+
+    if (
+      unlockType === "Mission" ||
+      unlockType === "Milestone" ||
+      unlockType === "Achievement" ||
+      unlockType === "Personal Best"
+    ) {
+
+      loadUnlockOptions(unlockType);
+
+    } else {
+
+      setOptions([]);
+
+      setUnlockId("");
+
+    }
+
+  }, [unlockType]);
+
+
+
+
+
+
+  async function saveReward() {
+
+
+    if (!name.trim()) {
+      return;
+    }
+
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+
+    if (!user) {
+      return;
+    }
+
+
+
+    const { error } = await supabase
+      .from("rewards")
+      .insert({
+
+        user_id: user.id,
+
+        name,
+
+        description,
+
+        category,
+
+        unlock_type:
+          unlockType
+            .toLowerCase()
+            .replace(" ", "_"),
+
+        unlock_id:
+          unlockId || null,
+
+        unlock_value:
+          unlockValue,
+
+        unlocked: false,
+
+        claimed: false,
+
+      });
+
+
+
+    if (error) {
+
+      alert(error.message);
+
+      return;
+
+    }
+
+
+    onSaved();
+
+    onClose();
+
   }
 
 
-  const { error } = await supabase
-    .from("rewards")
-    .insert({
-      user_id: user.id,
-      name,
-      description,
-      category,
-      unlock_type: unlockType,
-      unlock_value: unlockValue,
-      unlocked: false,
-      claimed: false,
-    });
 
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-
-  onSaved();
-  onClose();
-
-}
 
 
 
   return (
+
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-6">
 
 
@@ -111,15 +232,14 @@ async function saveReward() {
 
 
 
+
         <div className="mt-6 space-y-5">
 
 
           <div>
-
             <label className="mb-2 block text-sm text-zinc-300">
               Reward Name
             </label>
-
 
             <input
               value={name}
@@ -129,17 +249,15 @@ async function saveReward() {
               placeholder="e.g. New Football Boots"
               className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
             />
-
           </div>
 
 
 
-          <div>
 
+          <div>
             <label className="mb-2 block text-sm text-zinc-300">
               Description
             </label>
-
 
             <textarea
               value={description}
@@ -149,14 +267,16 @@ async function saveReward() {
               placeholder="Why does this reward matter?"
               className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
             />
-
           </div>
-                    <div>
 
+
+
+
+
+          <div>
             <label className="mb-2 block text-sm text-zinc-300">
               Category
             </label>
-
 
             <select
               value={category}
@@ -167,29 +287,22 @@ async function saveReward() {
             >
 
               {categories.map((item) => (
-
-                <option
-                  key={item}
-                  value={item}
-                >
+                <option key={item}>
                   {item}
                 </option>
-
               ))}
 
             </select>
-
           </div>
 
 
 
 
+
           <div>
-
             <label className="mb-2 block text-sm text-zinc-300">
-              Unlock Requirement
+              Unlock Type
             </label>
-
 
             <select
               value={unlockType}
@@ -200,51 +313,103 @@ async function saveReward() {
             >
 
               {unlockTypes.map((item) => (
-
-                <option
-                  key={item}
-                  value={item}
-                >
+                <option key={item}>
                   {item}
                 </option>
-
               ))}
 
             </select>
-
           </div>
 
 
 
 
-          <div>
 
-            <label className="mb-2 block text-sm text-zinc-300">
-              Requirement Value
-            </label>
+          {(unlockType === "Mission" ||
+            unlockType === "Milestone" ||
+            unlockType === "Achievement" ||
+            unlockType === "Personal Best") && (
 
+            <div>
 
-            <input
-              type="number"
-              min={1}
-              value={unlockValue}
-              onChange={(e) =>
-                setUnlockValue(
-                  Number(e.target.value)
-                )
-              }
-              className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
-            />
+              <label className="mb-2 block text-sm text-zinc-300">
+                Choose {unlockType}
+              </label>
 
 
-            <p className="mt-2 text-xs text-zinc-500">
-              Example: 5000 XP, Level 10, 30 day streak.
-            </p>
+              <select
+                value={unlockId}
+                onChange={(e) =>
+                  setUnlockId(e.target.value)
+                }
+                className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
+              >
 
-          </div>
+                <option value="">
+                  {loadingOptions
+                    ? "Loading..."
+                    : `Select ${unlockType}`}
+                </option>
+
+
+                {options.map((item) => (
+
+                  <option
+                    key={item.id}
+                    value={item.id}
+                  >
+
+                    {item.name ?? item.title}
+
+                  </option>
+
+                ))}
+
+
+              </select>
+
+            </div>
+
+          )}
+
+
+
+
+
+
+          {(unlockType === "Level" ||
+            unlockType === "Streak") && (
+
+            <div>
+
+              <label className="mb-2 block text-sm text-zinc-300">
+                Requirement
+              </label>
+
+
+              <input
+                type="number"
+                min={1}
+                value={unlockValue}
+                onChange={(e) =>
+                  setUnlockValue(
+                    Number(e.target.value)
+                  )
+                }
+                className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
+              />
+
+            </div>
+
+          )}
+
+
+
+
 
 
         </div>
+
 
 
 
@@ -276,5 +441,7 @@ async function saveReward() {
 
 
     </div>
+
   );
+
 }
