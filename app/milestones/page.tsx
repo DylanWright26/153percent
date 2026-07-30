@@ -84,7 +84,18 @@ export default function MilestonesPage() {
       console.error(error);
     }
 
-    setMilestones(data ?? []);
+const sortedMilestones = [...(data ?? [])].sort((a, b) => {
+  if (a.completed !== b.completed) {
+    return Number(a.completed) - Number(b.completed);
+  }
+
+  return (
+    new Date(a.created_at).getTime() -
+    new Date(b.created_at).getTime()
+  );
+});
+
+setMilestones(sortedMilestones);
     setLoading(false);
   }
 

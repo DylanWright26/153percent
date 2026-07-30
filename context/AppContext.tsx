@@ -141,6 +141,12 @@ export function AppProvider({
 
     const sortedMissions =
       [...(data ?? [])].sort((a, b) => {
+        const aComplete = a.progress >= a.target;
+const bComplete = b.progress >= b.target;
+
+if (aComplete !== bComplete) {
+  return Number(aComplete) - Number(bComplete);
+}
 
 
         if (
