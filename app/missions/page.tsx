@@ -1,10 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 import { useApp, Mission } from "@/context/AppContext";
 import MissionModal from "@/components/missions/MissionModal";
+
+const categories = [
+  "All",
+  "Fitness",
+  "Health",
+  "Football",
+  "Finance",
+  "Career",
+  "Learning",
+  "Personal",
+  "Other",
+];
 
 export default function MissionsPage() {
   const {
@@ -17,19 +29,25 @@ export default function MissionsPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
-
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   function openCreateModal() {
     setSelectedMission(null);
     setShowModal(true);
   }
 
-
   function openEditModal(mission: Mission) {
     setSelectedMission(mission);
     setShowModal(true);
   }
 
+  const filteredMissions = useMemo(() => {
+    if (selectedCategory === "All") return missions;
+
+    return missions.filter(
+      (mission) => mission.category === selectedCategory
+    );
+  }, [missions, selectedCategory]);
 
   if (loading) {
     return (
@@ -41,12 +59,9 @@ export default function MissionsPage() {
     );
   }
 
-
   return (
     <main className="min-h-screen bg-zinc-950 pb-24 text-white">
-
       <div className="mx-auto max-w-md px-6 py-8">
-
         <h1 className="text-4xl font-bold">
           🎯 Missions
         </h1>
@@ -54,7 +69,6 @@ export default function MissionsPage() {
         <p className="mt-2 text-zinc-500">
           Manage your missions.
         </p>
-
 
         <button
           onClick={openCreateModal}
@@ -64,41 +78,47 @@ export default function MissionsPage() {
           Add Mission
         </button>
 
+        {/* Category Filters */}
+
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-2">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
+                selectedCategory === category
+                  ? "bg-emerald-500 text-black"
+                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
 
         <div className="mt-6 space-y-4">
-
-
-          {missions.length === 0 && (
+          {filteredMissions.length === 0 && (
             <div className="rounded-2xl bg-zinc-900 p-8 text-center">
-
               <p className="text-zinc-400">
-                No missions yet.
+                No missions found.
               </p>
 
               <p className="mt-2 text-sm text-zinc-500">
-                Create your first mission to begin your journey.
+                Try another category or create a new mission.
               </p>
-
             </div>
           )}
 
-
-
-          {missions.map((mission) => (
-
+          {filteredMissions.map((mission) => (
             <div
               key={mission.id}
               className="rounded-2xl bg-zinc-900 p-5"
             >
-
               <div className="flex items-start justify-between">
-
                 <div>
-
                   <h2 className="text-lg font-semibold">
                     {mission.name}
                   </h2>
-
 
                   {mission.description && (
                     <p className="mt-2 text-sm text-zinc-400">
@@ -106,42 +126,28 @@ export default function MissionsPage() {
                     </p>
                   )}
 
-
                   <p className="mt-2 text-sm text-zinc-500">
                     {mission.category}
                   </p>
-
                 </div>
-
 
                 <span className="rounded-full bg-emerald-500 px-3 py-1 text-sm font-bold text-black">
                   +{mission.xp} XP
                 </span>
-
-
               </div>
 
-
-
               <div className="mt-5">
-
                 <div className="mb-2 flex justify-between text-sm text-zinc-400">
-
                   <span>
                     {mission.frequency}
                   </span>
 
-
                   <span>
                     {mission.progress} / {mission.target} {mission.unit}
                   </span>
-
                 </div>
 
-
-
                 <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
-
                   <div
                     className="h-full rounded-full bg-emerald-500 transition-all"
                     style={{
@@ -151,27 +157,17 @@ export default function MissionsPage() {
                       )}%`,
                     }}
                   />
-
                 </div>
-
-
               </div>
 
-
-
               <div className="mt-5 flex items-center justify-between">
-
-
                 <span className="text-sm text-zinc-400">
                   {mission.required_for_streak
                     ? "🔥 Maintain Daily Streak"
                     : "⭐ Optional Mission"}
                 </span>
 
-
                 <div className="flex gap-3">
-
-
                   <button
                     onClick={() => openEditModal(mission)}
                     className="rounded-xl bg-zinc-800 p-2 transition hover:bg-zinc-700"
@@ -179,36 +175,20 @@ export default function MissionsPage() {
                     <Pencil size={18} />
                   </button>
 
-
-
                   <button
                     onClick={() => deleteMission(mission.id)}
                     className="rounded-xl bg-red-500/20 p-2 text-red-400 transition hover:bg-red-500 hover:text-white"
                   >
                     <Trash2 size={18} />
                   </button>
-
-
                 </div>
-
-
               </div>
-
-
             </div>
-
           ))}
-
-
         </div>
-
-
       </div>
 
-
-
       {showModal && (
-
         <MissionModal
           mission={selectedMission ?? undefined}
           onClose={() => setShowModal(false)}
@@ -218,10 +198,7 @@ export default function MissionsPage() {
             setShowModal(false);
           }}
         />
-
       )}
-
-
     </main>
   );
 }
