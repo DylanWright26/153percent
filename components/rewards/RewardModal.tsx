@@ -25,29 +25,61 @@ const unlockTypes = [
 ];
 
 
+export interface Reward {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  unlock_type: string;
+  unlock_id: string | null;
+  unlock_value: number;
+  unlocked: boolean;
+  claimed: boolean;
+  claimed_at: string | null;
+  unlock_name?: string;
+}
+
 type Props = {
   onClose: () => void;
   onSaved: () => void;
+  reward?: Reward;
 };
 
 
 export default function RewardModal({
   onClose,
   onSaved,
+  reward,
 }: Props) {
 
 
-  const [name, setName] = useState("");
+const [name, setName] = useState(
+  reward?.name ?? ""
+);
 
-  const [description, setDescription] = useState("");
+const [description, setDescription] = useState(
+  reward?.description ?? ""
+);
 
-  const [category, setCategory] = useState("Lifestyle");
+const [category, setCategory] = useState(
+  reward?.category ?? "Lifestyle"
+);
 
-  const [unlockType, setUnlockType] = useState("Level");
+const [unlockType, setUnlockType] = useState(
+  reward
+    ? reward.unlock_type
+        .replace("_", " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "Level"
+);
 
-  const [unlockId, setUnlockId] = useState("");
+const [unlockId, setUnlockId] = useState(
+  reward?.unlock_id ?? ""
+);
 
-  const [unlockValue, setUnlockValue] = useState(1);
+const [unlockValue, setUnlockValue] = useState(
+  reward?.unlock_value ?? 1
+);
 
   const [options, setOptions] = useState<any[]>([]);
 
@@ -142,93 +174,85 @@ export default function RewardModal({
 
 
 
-  async function saveReward() {
+async function saveReward() {
 
+  if (!name.trim()) {
+    return;
+  }
 
-    if (!name.trim()) {
-      return;
-    }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  if (!user) {
+    return;
+  }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const rewardData = {
+    name,
+    description,
+    category,
+    unlock_type: unlockType
+      .toLowerCase()
+      .replace(" ", "_"),
+    unlock_id: unlockId || null,
+    unlock_value: unlockValue,
+  };
 
+  let error;
 
-    if (!user) {
-      return;
-    }
+  if (reward) {
 
+    const result = await supabase
+      .from("rewards")
+      .update(rewardData)
+      .eq("id", reward.id);
 
+    error = result.error;
 
-    const { error } = await supabase
+  } else {
+
+    const result = await supabase
       .from("rewards")
       .insert({
-
         user_id: user.id,
-
-        name,
-
-        description,
-
-        category,
-
-        unlock_type:
-          unlockType
-            .toLowerCase()
-            .replace(" ", "_"),
-
-        unlock_id:
-          unlockId || null,
-
-        unlock_value:
-          unlockValue,
-
+        ...rewardData,
         unlocked: false,
-
         claimed: false,
-
       });
 
-
-
-    if (error) {
-
-      alert(error.message);
-
-      return;
-
-    }
-
-
-    onSaved();
-
-    onClose();
+    error = result.error;
 
   }
 
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
+onSaved();
+onClose();
 
+}
 
+return (
 
-
-
-  return (
-
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-6">
+<div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-6">
 
 
       <div className="mx-auto my-8 w-full max-w-md rounded-3xl bg-zinc-900 p-6">
 
 
         <h2 className="text-2xl font-bold">
-          🎁 Create Reward
+{reward ? "✏️ Edit Reward" : "🎁 Create Reward"}
         </h2>
 
 
         <p className="mt-2 text-sm text-zinc-400">
-          Create rewards to unlock as you progress.
-        </p>
+{reward
+  ? "Update your reward."
+  : "Create rewards to unlock as you progress."}
+          </p>
 
 
 
@@ -430,7 +454,7 @@ export default function RewardModal({
             onClick={saveReward}
             className="flex-1 rounded-xl bg-emerald-500 py-3 font-semibold text-black hover:bg-emerald-400"
           >
-            Create Reward
+            {reward ? "Save Changes" : "Create Reward"}
           </button>
 
 
