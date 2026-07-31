@@ -41,21 +41,52 @@ export default function MilestonesPage() {
 
   const [selectedCategory, setSelectedCategory] =
     useState("All");
+    const [selectedView, setSelectedView] = useState<
+  "available" | "locked" | "completed"
+>("available");
 
   useEffect(() => {
     loadMilestones();
   }, []);
 
-  const filteredMilestones = useMemo(() => {
-    if (selectedCategory === "All") {
-      return milestones;
+ const filteredMilestones = useMemo(() => {
+  let filtered = milestones.filter((milestone) => {
+    if (
+      selectedCategory !== "All" &&
+      milestone.category !== selectedCategory
+    ) {
+      return false;
     }
 
-    return milestones.filter(
-      (milestone) =>
-        milestone.category === selectedCategory
-    );
-  }, [milestones, selectedCategory]);
+    switch (selectedView) {
+      case "completed":
+        return milestone.completed;
+
+      case "available":
+        return (
+          !milestone.completed &&
+          (!milestone.prerequisite ||
+            milestone.prerequisite.completed)
+        );
+
+      case "locked":
+        return (
+          !milestone.completed &&
+          milestone.prerequisite &&
+          !milestone.prerequisite.completed
+        );
+
+      default:
+        return true;
+    }
+  });
+
+  return filtered;
+}, [
+  milestones,
+  selectedCategory,
+  selectedView,
+]); [milestones, selectedCategory];
 
   async function loadMilestones() {
     setLoading(true);
@@ -70,15 +101,22 @@ export default function MilestonesPage() {
     }
 
     const { data, error } = await supabase
-      .from("milestones")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("completed", {
-        ascending: true,
-      })
-      .order("created_at", {
-        ascending: true,
-      });
+  .from("milestones")
+  .select(`
+    *,
+    prerequisite:prerequisite_id (
+      id,
+      title,
+      completed
+    )
+  `)
+  .eq("user_id", user.id)
+  .order("completed", {
+    ascending: true,
+  })
+  .order("created_at", {
+    ascending: true,
+  });
 
     if (error) {
       console.error(error);
@@ -203,6 +241,47 @@ setMilestones(sortedMilestones);
           </button>
         </div>
 
+<div className="mt-6 grid grid-cols-3 gap-2">
+  <button
+    onClick={() =>
+      setSelectedView("available")
+    }
+    className={`rounded-xl py-2 font-semibold transition ${
+      selectedView === "available"
+        ? "bg-green-600 text-black"
+        : "bg-zinc-800 text-zinc-300"
+    }`}
+  >
+    Available
+  </button>
+
+  <button
+    onClick={() =>
+      setSelectedView("locked")
+    }
+    className={`rounded-xl py-2 font-semibold transition ${
+      selectedView === "locked"
+        ? "bg-yellow-500 text-black"
+        : "bg-zinc-800 text-zinc-300"
+    }`}
+  >
+    Locked
+  </button>
+
+  <button
+    onClick={() =>
+      setSelectedView("completed")
+    }
+    className={`rounded-xl py-2 font-semibold transition ${
+      selectedView === "completed"
+        ? "bg-blue-600 text-white"
+        : "bg-zinc-800 text-zinc-300"
+    }`}
+  >
+    Completed
+  </button>
+</div>
+
         <div className="mt-6 flex gap-2 overflow-x-auto pb-2">
           {categories.map((category) => (
             <button
@@ -266,19 +345,30 @@ setMilestones(sortedMilestones);
                 <div className="mt-5 flex items-center justify-between">
                   <div>
                     {milestone.completed ? (
-                      <span className="font-medium text-green-400">
-                        ✅ Completed
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() =>
-                          completeMilestone(milestone)
-                        }
-                        className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-black hover:bg-green-500"
-                      >
-                        Complete
-                      </button>
-                    )}
+  <span className="font-medium text-green-400">
+    ✅ Completed
+  </span>
+) : milestone.prerequisite &&
+  !milestone.prerequisite.completed ? (
+  <div>
+    <p className="text-sm text-yellow-400 font-medium">
+      🔒 Locked
+    </p>
+
+    <p className="mt-1 text-xs text-zinc-500">
+      Requires: {milestone.prerequisite.title}
+    </p>
+  </div>
+) : (
+  <button
+    onClick={() =>
+      completeMilestone(milestone)
+    }
+    className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-black hover:bg-green-500"
+  >
+    Complete
+  </button>
+)}
                   </div>
 
                   <div className="flex gap-3">

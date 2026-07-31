@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 const categories = [
@@ -21,115 +21,162 @@ export interface Milestone {
   category: string;
   xp_reward: number;
   completed: boolean;
+  created_at: string;
+
+  prerequisite_id: string | null;
+
+  prerequisite?: {
+    id: string;
+    title: string;
+    completed: boolean;
+  } | null;
 }
 
 type Props = {
+  milestone?: Milestone;
   onClose: () => void;
   onSaved: () => void;
-  milestone?: Milestone;
 };
 
 export default function MilestoneModal({
+  milestone,
   onClose,
   onSaved,
-  milestone,
 }: Props) {
-
   const [title, setTitle] = useState(
     milestone?.title ?? ""
   );
 
-  const [description, setDescription] = useState(
-    milestone?.description ?? ""
+  const [description, setDescription] =
+    useState(
+      milestone?.description ?? ""
+    );
+
+  const [category, setCategory] =
+    useState(
+      milestone?.category ?? "Personal"
+    );
+
+  const [xpReward, setXpReward] =
+    useState(
+      milestone?.xp_reward ?? 250
+    );
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [
+    availableMilestones,
+    setAvailableMilestones,
+  ] = useState<
+    {
+      id: string;
+      title: string;
+      category: string;
+    }[]
+  >([]);
+
+  const [
+    prerequisiteId,
+    setPrerequisiteId,
+  ] = useState(
+    milestone?.prerequisite_id ?? ""
   );
 
-  const [category, setCategory] = useState(
-    milestone?.category ?? "Personal"
-  );
+  useEffect(() => {
+    async function loadMilestones() {
+      const { data, error } =
+        await supabase
+          .from("milestones")
+          .select(
+            "id, title, category"
+          )
+          .order("title");
 
-  const [xpReward, setXpReward] = useState(
-    milestone?.xp_reward ?? 250
-  );
+      if (error) {
+        console.error(error);
+        return;
+      }
 
-  const [loading, setLoading] = useState(false);
+      setAvailableMilestones(
+        (data ?? []).filter(
+          (m) =>
+            m.id !== milestone?.id
+        )
+      );
+    }
 
+    loadMilestones();
+  }, [milestone]);
 
   async function saveMilestone() {
-
     if (!title.trim()) {
       return;
     }
 
     setLoading(true);
 
-
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
 
     if (!user) {
       setLoading(false);
       return;
     }
 
-
     let error;
 
-
     if (milestone) {
-
-      const result = await supabase
-        .from("milestones")
-        .update({
-          title,
-          description,
-          category,
-          xp_reward: xpReward,
-        })
-        .eq("id", milestone.id);
-
+      const result =
+        await supabase
+          .from("milestones")
+          .update({
+            title,
+            description,
+            category,
+            xp_reward: xpReward,
+            prerequisite_id:
+              prerequisiteId || null,
+          })
+          .eq(
+            "id",
+            milestone.id
+          );
 
       error = result.error;
-
-
     } else {
-
-      const result = await supabase
-        .from("milestones")
-        .insert({
-          user_id: user.id,
-          title,
-          description,
-          category,
-          xp_reward: xpReward,
-          completed: false,
-        });
-
+      const result =
+        await supabase
+          .from("milestones")
+          .insert({
+            user_id: user.id,
+            title,
+            description,
+            category,
+            xp_reward: xpReward,
+            completed: false,
+            prerequisite_id:
+              prerequisiteId || null,
+          });
 
       error = result.error;
     }
 
-
     setLoading(false);
-
 
     if (error) {
       alert(error.message);
       return;
     }
 
-
     onSaved();
     onClose();
   }
 
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-6">
-
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-6">
       <div className="mx-auto my-8 w-full max-w-md rounded-3xl bg-zinc-900 p-6">
-
         <h2 className="text-2xl font-bold">
           {milestone
             ? "✏️ Edit Milestone"
@@ -143,134 +190,171 @@ export default function MilestoneModal({
         </p>
 
         <div className="mt-6 space-y-6">
-                    {/* Title */}
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">
-            Title
-          </label>
+          {/* Title */}
 
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Run a 5K under 25 minutes"
-            className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
-          />
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-300">
+              Title
+            </label>
 
-          <p className="mt-2 text-xs text-zinc-500">
-            Give your milestone a clear goal.
-          </p>
-        </div>
+            <input
+              value={title}
+              onChange={(e) =>
+                setTitle(e.target.value)
+              }
+              placeholder="e.g. Run a 5K under 25 minutes"
+              className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
+            />
 
+            <p className="mt-2 text-xs text-zinc-500">
+              Give your milestone a clear goal.
+            </p>
+          </div>
 
-        {/* Description */}
+          {/* Description */}
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">
-            Description
-          </label>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-300">
+              Description
+            </label>
 
-          <textarea
-            rows={4}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe what achieving this milestone means..."
-            className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
-          />
+            <textarea
+              rows={4}
+              value={description}
+              onChange={(e) =>
+                setDescription(e.target.value)
+              }
+              placeholder="Describe what achieving this milestone means..."
+              className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
+            />
 
-          <p className="mt-2 text-xs text-zinc-500">
-            Optional. Add extra details about the goal.
-          </p>
-        </div>
+            <p className="mt-2 text-xs text-zinc-500">
+              Optional. Add extra details about your milestone.
+            </p>
+          </div>
 
+          {/* Category */}
 
-        {/* Category */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-300">
+              Category
+            </label>
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">
-            Category
-          </label>
+            <select
+              value={category}
+              onChange={(e) =>
+                setCategory(e.target.value)
+              }
+              className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
+            >
+              {categories.map((cat) => (
+                <option
+                  key={cat}
+                  value={cat}
+                >
+                  {cat}
+                </option>
+              ))}
+            </select>
 
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
-          >
-            {categories.map((cat) => (
-              <option
-                key={cat}
-                value={cat}
-              >
-                {cat}
+            <p className="mt-2 text-xs text-zinc-500">
+              Organise your milestones into categories.
+            </p>
+          </div>
+
+          {/* Prerequisite */}
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-300">
+              Requires
+            </label>
+
+            <select
+              value={prerequisiteId}
+              onChange={(e) =>
+                setPrerequisiteId(
+                  e.target.value
+                )
+              }
+              className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
+            >
+              <option value="">
+                None (Available Immediately)
               </option>
-            ))}
-          </select>
 
-          <p className="mt-2 text-xs text-zinc-500">
-            Organise your milestones.
-          </p>
+              {availableMilestones.map(
+                (m) => (
+                  <option
+                    key={m.id}
+                    value={m.id}
+                  >
+                    {m.title}
+                  </option>
+                )
+              )}
+            </select>
+
+            <p className="mt-2 text-xs text-zinc-500">
+              This milestone won't become
+              available until the selected
+              milestone has been completed.
+            </p>
+          </div>
+                    {/* XP Reward */}
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-300">
+              XP Reward
+            </label>
+
+            <input
+              type="number"
+              min={0}
+              value={xpReward}
+              onChange={(e) =>
+                setXpReward(
+                  Number(e.target.value)
+                )
+              }
+              className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
+            />
+
+            <p className="mt-2 text-xs text-zinc-500">
+              Earn{" "}
+              <span className="font-semibold text-green-400">
+                {xpReward} XP
+              </span>{" "}
+              when this milestone is completed.
+            </p>
+          </div>
         </div>
 
+        {/* Buttons */}
 
-        {/* XP Reward */}
+        <div className="mt-8 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-xl bg-zinc-800 py-3 font-medium transition hover:bg-zinc-700"
+          >
+            Cancel
+          </button>
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">
-            XP Reward
-          </label>
-
-          <input
-            type="number"
-            min={0}
-            value={xpReward}
-            onChange={(e) =>
-              setXpReward(Number(e.target.value))
-            }
-            className="w-full rounded-xl bg-zinc-800 p-3 outline-none"
-          />
-
-          <p className="mt-2 text-xs text-zinc-500">
-            Earn{" "}
-            <span className="font-semibold text-green-400">
-              {xpReward} XP
-            </span>{" "}
-            when this milestone is completed.
-          </p>
-        </div>
-
-
-      </div>
-
-
-      {/* Buttons */}
-
-      <div className="mt-8 flex gap-3">
-
-        <button
-          onClick={onClose}
-          className="flex-1 rounded-xl bg-zinc-800 py-3 font-medium hover:bg-zinc-700"
-        >
-          Cancel
-        </button>
-
-
-        <button
-          disabled={loading}
-          onClick={saveMilestone}
-          className="flex-1 rounded-xl bg-green-600 py-3 font-semibold hover:bg-green-500 disabled:opacity-50"
-        >
-          {loading
-            ? "Saving..."
-            : milestone
+          <button
+            type="button"
+            disabled={loading}
+            onClick={saveMilestone}
+            className="flex-1 rounded-xl bg-green-600 py-3 font-semibold text-black transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading
+              ? "Saving..."
+              : milestone
               ? "Save Changes"
               : "Create Milestone"}
-        </button>
-
+          </button>
+        </div>
       </div>
-
-
     </div>
-
-  </div>
   );
 }

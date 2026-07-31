@@ -42,3 +42,16 @@ export function getLevelProgress(totalXP: number): number {
 
   return (currentXP / neededXP) * 100;
 }
+export function getXPNeededForLevel(level: number): number {
+  if (level <= 1) return 0;
+
+  let totalXP = 0;
+  let xpRequired = 100;
+
+  for (let currentLevel = 1; currentLevel < level; currentLevel++) {
+    totalXP += xpRequired;
+    xpRequired = Math.round(xpRequired * 1.5);
+  }
+
+  return totalXP;
+}

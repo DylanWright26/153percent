@@ -8,6 +8,7 @@ import MissionList from "./MissionList";
 
 import { useApp } from "@/context/AppContext";
 import { getChallengeInfo } from "@/utils/challenge";
+import { getLevel } from "@/utils/levels";
 
 export default function Dashboard() {
   const { missions, profile, loading } = useApp();
@@ -15,7 +16,7 @@ export default function Dashboard() {
   const challenge = getChallengeInfo();
 
   const totalXP = profile?.total_xp ?? 0;
-  const level = profile?.level ?? 1;
+  const level = getLevel(totalXP);
   const streak = profile?.current_streak ?? 0;
 
   let title = "TODAY'S MESSAGE";
