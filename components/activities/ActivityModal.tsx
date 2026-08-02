@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { checkPersonalBest } from "@/utils/personalBests";
 
 
 const activityTypes = [
@@ -284,19 +283,7 @@ export default function ActivityModal({
 
 
 
-    // Check PB only for new activities
-
-    if (
-      !activity &&
-      activityId
-    ) {
-
-      await checkPersonalBest(
-        user.id,
-        activityId
-      );
-
-    }
+    
 
 
 
