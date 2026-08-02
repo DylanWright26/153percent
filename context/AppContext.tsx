@@ -10,8 +10,7 @@ import {
 
 import { supabase } from "@/lib/supabase";
 import { checkAchievements } from "@/utils/achievements";
-import { checkRewards } from "@/utils/rewards";
-
+import { checkRewards, checkMissionRewards } from "@/utils/rewards";
 
 export interface Mission {
   id: string;
@@ -491,10 +490,10 @@ if (aComplete !== bComplete) {
 
 
       // Unlock linked rewards
-      await checkRewards(
-        user.id,
-        mission.id
-      );
+    await checkMissionRewards(
+  user.id,
+  mission.id
+);
 
     }
 
@@ -550,7 +549,7 @@ if (aComplete !== bComplete) {
     await checkAchievements(
       user.id
     );
-
+    await checkRewards(user.id);
 
 
     await refreshMissions();
