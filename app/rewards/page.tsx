@@ -13,6 +13,8 @@ import RewardModal, {
   Reward,
 } from "@/components/rewards/RewardModal";
 
+import BackButton from "@/components/common/BackButton";
+
 const unlockTypes = [
   "All",
   "level",
@@ -270,7 +272,9 @@ return (
 
     <div className="mx-auto max-w-md px-6 py-8">
 
-      <div className="flex items-center justify-between">
+  <BackButton href="/progress" />
+
+  <div className="flex items-center justify-between">
 
         <div>
 
