@@ -73,6 +73,23 @@ export default function ProgressPage() {
 
         </div>
 
+        {/* All Levels */}
+
+        <Link
+          href="/levels"
+          className="mt-4 block rounded-2xl bg-zinc-900 p-5 text-center transition hover:bg-zinc-800"
+        >
+
+          <p className="text-lg font-bold">
+            ⭐ View All Levels
+          </p>
+
+          <p className="mt-1 text-sm text-zinc-500">
+            See the complete XP progression
+          </p>
+
+        </Link>
+
         {/* Streak */}
 
         <div className="mt-5 rounded-3xl bg-zinc-900 p-6">

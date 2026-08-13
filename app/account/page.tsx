@@ -6,12 +6,7 @@ import { ChevronRight } from "lucide-react";
 import BackButton from "@/components/common/BackButton";
 
 const items = [
-  {
-    title: "Achievements",
-    description: "View your unlocked achievements",
-    href: "/account/achievements",
-    icon: "🏆",
-  },
+
   {
     title: "Settings",
     description: "Manage your account",
